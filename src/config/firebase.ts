@@ -1,14 +1,25 @@
-import { initializeApp, cert, App } from 'firebase-admin/app';
+import * as admin from 'firebase-admin';
 import dotenv from 'dotenv';
 
+// Load environment variables
 dotenv.config();
 
-const firebaseApp: App = initializeApp({
-  credential: cert({
+// Verify that our environment variables exist before starting the server
+if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+  throw new Error("Missing Firebase environment variables! Check your .env file.");
+}
+
+// Initialize the Firebase Admin SDK
+admin.initializeApp({
+  credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    // The replace function is CRITICAL. It ensures the \n characters in your .env are treated as actual line breaks.
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   }),
 });
 
-export default firebaseApp;
+// Export the auth module so we can use it in our middleware
+export const firebaseAuth = admin.auth();
+
+console.log("🔥 Firebase Admin Initialized Successfully");

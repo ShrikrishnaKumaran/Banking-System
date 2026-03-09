@@ -1,12 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export enum KycStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  FROZEN = 'FROZEN',
-}
-
 export interface IUser extends Document {
   firebaseUid: string;
   email: string;
@@ -28,7 +21,6 @@ export interface IUser extends Document {
     country: string;
   };
   panIdHash: string;
-  kycStatus: KycStatus;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -86,11 +78,6 @@ const userSchema = new Schema<IUser>(
     panIdHash: {
       type: String,
       required: true,
-    },
-    kycStatus: {
-      type: String,
-      enum: Object.values(KycStatus),
-      default: KycStatus.PENDING,
     },
     isActive: {
       type: Boolean,

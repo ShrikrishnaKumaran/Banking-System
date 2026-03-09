@@ -3,3 +3,4 @@ node_modules
 *.key
 serviceAccountKey.json
 prompts.md
+Firebase_key.json

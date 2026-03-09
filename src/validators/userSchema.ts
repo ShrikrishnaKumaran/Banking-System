@@ -7,9 +7,7 @@ const minAge = (date: Date) => {
   return date <= eighteenYearsAgo;
 };
 
-// 1. BASE schema — single source of truth for all field rules
-const BaseUserSchema = z.object({
-  firebaseUid: z.string().min(1, 'Firebase UID is required'),
+export const RegisterUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.object({
     countryCode: z
@@ -36,10 +34,9 @@ const BaseUserSchema = z.object({
     postalCode: z.string().min(1, 'Postal code is required').trim(),
     country: z.string().min(1, 'Country is required').trim(),
   }),
-  panId: z.string().min(1, 'PAN ID is required'),
-  kycStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'FROZEN']),
-  isActive: z.boolean(),
+  panId: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'PAN must be in format ABCDE1234F'),
 });
 
-// 2. CREATE schema — for user creation, all fields required
-export const CreateUserSchema = BaseUserSchema;
+export type RegisterUserInput = z.infer<typeof RegisterUserSchema>;
