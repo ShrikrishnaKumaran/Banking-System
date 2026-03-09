@@ -3,10 +3,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IUser extends Document {
   firebaseUid: string;
   email: string;
-  phone: {
-    countryCode: string;
-    number: string;
-  };
   transactionPinHash: string;
   legalName: {
     firstName: string;
@@ -41,20 +37,6 @@ const userSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
-    },
-    phone: {
-      countryCode: {
-        type: String,
-        required: true,
-        trim: true,
-        match: [/^\+\d{1,4}$/, 'Country code must be in E.164 format (e.g. +91)'],
-      },
-      number: {
-        type: String,
-        required: true,
-        trim: true,
-        match: [/^\d{7,12}$/, 'Phone number must be 7-12 digits'],
-      },
     },
     transactionPinHash: {
       type: String,

@@ -9,14 +9,6 @@ const minAge = (date: Date) => {
 
 export const RegisterUserSchema = z.object({
   email: z.string().email('Invalid email address'),
-  phone: z.object({
-    countryCode: z
-      .string()
-      .regex(/^\+\d{1,4}$/, 'Country code must be in E.164 format (e.g. +91)'),
-    number: z
-      .string()
-      .regex(/^\d{7,12}$/, 'Phone number must be 7-12 digits'),
-  }),
   transactionPin: z.string().regex(/^\d{4,6}$/, 'Transaction PIN must be 4-6 digits'),
   legalName: z.object({
     firstName: z.string().min(1, 'First name is required').trim(),
@@ -40,3 +32,9 @@ export const RegisterUserSchema = z.object({
 });
 
 export type RegisterUserInput = z.infer<typeof RegisterUserSchema>;
+
+export const LoginUserSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+export type LoginUserInput = z.infer<typeof LoginUserSchema>;

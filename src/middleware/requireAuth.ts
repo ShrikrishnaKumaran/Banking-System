@@ -6,7 +6,6 @@ export interface AuthRequest extends Request {
   user?: {
     firebaseUid: string;
     email?: string;
-    phone?: string;
   };
 }
 
@@ -23,16 +22,14 @@ export const requireAuth = async (
       return;
     }
 
-    const idToken = authHeader.split('Bearer ')[1];
+    const idToken = authHeader.split(" ")[1];
 
-    const decodedToken = await firebaseAuth.verifyIdToken(idToken);
-
+    const decodedToken = await firebaseAuth.verifyIdToken(idToken); 
     req.user = {
       firebaseUid: decodedToken.uid,
       email: decodedToken.email,
-      phone: decodedToken.phone_number,
     };
-
+    //console.log('Authenticated user details:', req.user );
     next();
   } catch (error) {
     console.error('Firebase token verification failed:', error);
