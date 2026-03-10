@@ -16,6 +16,7 @@ export const register = async (
       message: 'User registered successfully',
       user: {
         id: user._id,
+        userName: user.userName,
         email: user.email,
         legalName: user.legalName,
         isActive: user.isActive,
@@ -45,6 +46,7 @@ export const login = async (
       message: 'Login successful',
       user: {
         id: user._id,
+        userName: user.userName,
         email: user.email,
         legalName: user.legalName,
         isActive: user.isActive,

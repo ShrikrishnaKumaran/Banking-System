@@ -27,9 +27,8 @@ export const requireAuth = async (
     const decodedToken = await firebaseAuth.verifyIdToken(idToken); 
     req.user = {
       firebaseUid: decodedToken.uid,
-      email: decodedToken.email,
+      email: decodedToken.email
     };
-    //console.log('Authenticated user details:', req.user );
     next();
   } catch (error) {
     console.error('Firebase token verification failed:', error);

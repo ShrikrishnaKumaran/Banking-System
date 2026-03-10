@@ -2,7 +2,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   firebaseUid: string;
+  userName: string;
   email: string;
+  passwordHash: string;
   transactionPinHash: string;
   legalName: {
     firstName: string;
@@ -16,7 +18,7 @@ export interface IUser extends Document {
     postalCode: string;
     country: string;
   };
-  panIdHash: string;
+  panId: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -31,12 +33,24 @@ const userSchema = new Schema<IUser>(
       unique: true,
       index: true,
     },
+    userName: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 30,
+    },
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
       trim: true,
+    },
+    passwordHash: {
+      type: String,
+      required: true,
     },
     transactionPinHash: {
       type: String,
@@ -57,9 +71,13 @@ const userSchema = new Schema<IUser>(
       postalCode: { type: String, required: true, trim: true },
       country: { type: String, required: true, trim: true },
     },
-    panIdHash: {
+    panId: {
       type: String,
       required: true,
+      unique: true,
+      index: true,
+      uppercase: true,
+      trim: true,
     },
     isActive: {
       type: Boolean,

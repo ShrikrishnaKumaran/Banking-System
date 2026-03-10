@@ -1,10 +1,10 @@
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import Account, { IAccount } from '../models/account';
+import Account, { AccountStatus, IAccount } from '../models/account';
 import Ledger from '../models/ledger';
 import Transaction from '../models/transaction';
 import User from '../models/user';
-import { TransactionHistoryQuery } from '../validators/accountSchema';
+import { TransactionHistoryQuery, UpdateAccountStatusInput } from '../validators/accountSchema';
 
 // Generate a unique 12-digit account number
 const generateAccountNumber = (): string => {
@@ -13,7 +13,7 @@ const generateAccountNumber = (): string => {
   return timestamp + random;
 };
 
-export const createAccount = async (firebaseUid: string): Promise<IAccount> => {
+export const createAccount = async (firebaseUid: string) => {
   const user = await User.findOne({ firebaseUid });
   if (!user) {
     throw Object.assign(new Error('User not found'), { statusCode: 404 });
@@ -34,7 +34,7 @@ export const createAccount = async (firebaseUid: string): Promise<IAccount> => {
     status: 'ACTIVE',
   });
 
-  return account;
+  return { account, userName: user.userName };
 };
 
 export const getUserAccounts = async (firebaseUid: string) => {
@@ -260,6 +260,27 @@ const getVerifiedAccount = async (
   if (!account) {
     throw Object.assign(new Error('Account not found'), { statusCode: 404 });
   }
+
+  return account;
+};
+
+export const updateAccountStatus = async (
+  firebaseUid: string,
+  accountId: string,
+  input: UpdateAccountStatusInput,
+): Promise<IAccount> => {
+  const account = await getVerifiedAccount(firebaseUid, accountId);
+
+  if (account.status === input.status) {
+    throw Object.assign(new Error(`Account is already ${input.status}`), { statusCode: 400 });
+  }
+
+  if (account.status === 'CLOSED') {
+    throw Object.assign(new Error('Cannot change status of a closed account'), { statusCode: 400 });
+  }
+
+  account.status = input.status as AccountStatus;
+  await account.save();
 
   return account;
 };

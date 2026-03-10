@@ -18,20 +18,26 @@ export const registerUser = async (
   }
 
   // Check duplicate PAN
-  const panIdHash = await bcrypt.hash(input.panId, SALT_ROUNDS);
-  // For duplicate detection, we can't use bcrypt (salted). Use a findOne after create
-  // or switch PAN to a unique index. For now, hash both with bcrypt.
+  const existingPan = await User.findOne({ panId: input.panId });
+  if (existingPan) {
+    throw Object.assign(new Error('PAN ID is already registered'), { statusCode: 409 });
+  }
 
-  const transactionPinHash = await bcrypt.hash(input.transactionPin, SALT_ROUNDS);
+  const [passwordHash, transactionPinHash] = await Promise.all([
+    bcrypt.hash(input.password, SALT_ROUNDS),
+    bcrypt.hash(input.transactionPin, SALT_ROUNDS),
+  ]);
 
   const user = await User.create({
     firebaseUid,
+    userName: input.userName,
     email: input.email,
+    passwordHash,
     transactionPinHash,
     legalName: input.legalName,
     dateOfBirth: input.dateOfBirth,
     address: input.address,
-    panIdHash,
+    panId: input.panId,
     isActive: true,
   });
 
@@ -51,6 +57,11 @@ export const loginUser = async (firebaseUid: string, tokenEmail: string | undefi
 
   if (!user.isActive) {
     throw Object.assign(new Error('Account is deactivated. Contact support.'), { statusCode: 403 });
+  }
+
+  const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+  if (!isPasswordValid) {
+    throw Object.assign(new Error('Invalid password'), { statusCode: 401 });
   }
 
   return user;

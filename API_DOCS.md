@@ -56,6 +56,7 @@ POST /api/users/register
 | Field                  | Type   | Required | Validation                                          |
 | ---------------------- | ------ | -------- | --------------------------------------------------- |
 | `email`                | string | Yes      | Valid email format                                   |
+| `password`             | string | Yes      | Minimum 6 characters                                 |
 | `transactionPin`       | string | Yes      | 4-6 digits (`/^\d{4,6}$/`)                          |
 | `legalName.firstName`  | string | Yes      | Non-empty                                            |
 | `legalName.lastName`   | string | Yes      | Non-empty                                            |
@@ -72,6 +73,7 @@ POST /api/users/register
 ```json
 {
   "email": "test@gmail.com",
+  "password": "securePass123",
   "transactionPin": "1234",
   "legalName": {
     "firstName": "Test",
@@ -106,11 +108,12 @@ POST /api/users/register
 
 **Error Responses:**
 
-| Status | Error                      |
-| ------ | -------------------------- |
-| 400    | Validation failed          |
-| 401    | Unauthorized               |
-| 409    | User already registered    |
+| Status | Error                          |
+| ------ | ------------------------------ |
+| 400    | Validation failed              |
+| 401    | Unauthorized                   |
+| 409    | User already registered        |
+| 409    | PAN ID is already registered   |
 
 ---
 
@@ -129,15 +132,17 @@ POST /api/users/login
 
 **Request Body:**
 
-| Field   | Type   | Required | Validation         |
-| ------- | ------ | -------- | ------------------ |
-| `email` | string | Yes      | Valid email format  |
+| Field      | Type   | Required | Validation         |
+| ---------- | ------ | -------- | ------------------ |
+| `email`    | string | Yes      | Valid email format  |
+| `password` | string | Yes      | Non-empty           |
 
 **Example Request Body:**
 
 ```json
 {
-  "email": "test@gmail.com"
+  "email": "test@gmail.com",
+  "password": "securePass123"
 }
 ```
 
@@ -161,7 +166,7 @@ POST /api/users/login
 | Status | Error                                    |
 | ------ | ---------------------------------------- |
 | 400    | Validation failed                        |
-| 401    | Unauthorized / Email does not match      |
+| 401    | Unauthorized / Email does not match / Invalid password |
 | 403    | Account is deactivated                   |
 | 404    | User not found. Please register first.   |
 
@@ -445,6 +450,258 @@ GET /api/accounts/665f2b.../transactions?range=custom&startDate=2026-03-01T00:00
 
 ---
 
+### 9. Update Account Status
+
+```
+PATCH /api/accounts/:accountId/status
+```
+
+**Headers:**
+
+| Header          | Value              |
+| --------------- | ------------------ |
+| `Authorization` | `Bearer <idToken>` |
+| `Content-Type`  | `application/json` |
+
+**Path Parameters:**
+
+| Param       | Type   | Description                  |
+| ----------- | ------ | ---------------------------- |
+| `accountId` | string | MongoDB ObjectId of account  |
+
+**Request Body:**
+
+| Field    | Type   | Required | Validation                              |
+| -------- | ------ | -------- | --------------------------------------- |
+| `status` | string | Yes      | Must be `ACTIVE`, `FROZEN`, or `CLOSED` |
+
+**Example Request Body:**
+
+```json
+{
+  "status": "FROZEN"
+}
+```
+
+**Success Response — `200 OK`:**
+
+```json
+{
+  "message": "Account status updated successfully",
+  "account": {
+    "id": "665f2b...",
+    "accountNumber": "123456789012",
+    "status": "FROZEN",
+    "updatedAt": "2026-03-10T..."
+  }
+}
+```
+
+**Error Responses:**
+
+| Status | Error                                     |
+| ------ | ----------------------------------------- |
+| 400    | Validation failed                         |
+| 400    | Account is already {STATUS}               |
+| 400    | Cannot change status of a closed account  |
+| 401    | Unauthorized                              |
+| 404    | Account not found                         |
+
+---
+
+## Transaction Endpoints
+
+### 10. Transfer Funds (User-to-User)
+
+```
+POST /api/transactions/transfer
+```
+
+**Headers:**
+
+| Header          | Value              |
+| --------------- | ------------------ |
+| `Authorization` | `Bearer <idToken>` |
+| `Content-Type`  | `application/json` |
+
+**Request Body:**
+
+| Field                  | Type   | Required | Validation                                  |
+| ---------------------- | ------ | -------- | ------------------------------------------- |
+| `sourceAccountId`      | string | Yes      | Valid 24-char hex ObjectId (must be yours)   |
+| `destinationAccountId` | string | Yes      | Valid 24-char hex ObjectId (must differ)     |
+| `amount`               | number | Yes      | Positive integer (paise)                     |
+| `idempotencyKey`       | string | Yes      | Valid UUID v4 (prevents duplicate transfers) |
+| `note`                 | string | No       | Max 255 characters                           |
+
+**Example Request Body:**
+
+```json
+{
+  "sourceAccountId": "665f2b000000000000000001",
+  "destinationAccountId": "665f2b000000000000000002",
+  "amount": 50000,
+  "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000",
+  "note": "Rent payment"
+}
+```
+
+**Success Response — `201 Created`:**
+
+```json
+{
+  "message": "Transfer completed successfully",
+  "transaction": {
+    "id": "665f3c...",
+    "sourceAccountId": "665f2b000000000000000001",
+    "destinationAccountId": "665f2b000000000000000002",
+    "amount": 50000,
+    "status": "SETTLED",
+    "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000",
+    "note": "Rent payment",
+    "createdAt": "2026-03-10T..."
+  }
+}
+```
+
+**Error Responses:**
+
+| Status | Error                                              |
+| ------ | -------------------------------------------------- |
+| 400    | Validation failed                                  |
+| 400    | Source and destination accounts must be different   |
+| 400    | Source account is not active                        |
+| 400    | Destination account is not active                  |
+| 400    | Insufficient balance                               |
+| 401    | Unauthorized                                       |
+| 404    | Source account not found                            |
+| 404    | Destination account not found                      |
+
+> **Idempotency:** If a transfer with the same `idempotencyKey` already exists, the existing transaction is returned (no duplicate charge).
+
+---
+
+## Ledger Endpoints (External Deposits & Withdrawals)
+
+### 11. External Deposit
+
+```
+POST /api/ledger/deposit
+```
+
+**Headers:**
+
+| Header          | Value              |
+| --------------- | ------------------ |
+| `Authorization` | `Bearer <idToken>` |
+| `Content-Type`  | `application/json` |
+
+**Request Body:**
+
+| Field         | Type   | Required | Validation               |
+| ------------- | ------ | -------- | ------------------------ |
+| `accountId`   | string | Yes      | Valid 24-char hex ObjectId (must be yours) |
+| `amount`      | number | Yes      | Positive integer (paise) |
+| `description` | string | No       | Max 255 characters       |
+
+**Example Request Body:**
+
+```json
+{
+  "accountId": "665f2b000000000000000001",
+  "amount": 100000,
+  "description": "Salary credit"
+}
+```
+
+**Success Response — `201 Created`:**
+
+```json
+{
+  "message": "Deposit successful",
+  "ledgerEntry": {
+    "id": "665f4d...",
+    "accountId": "665f2b000000000000000001",
+    "amount": 100000,
+    "type": "CREDIT",
+    "source": "EXTERNAL",
+    "description": "Salary credit",
+    "createdAt": "2026-03-10T..."
+  }
+}
+```
+
+**Error Responses:**
+
+| Status | Error                  |
+| ------ | ---------------------- |
+| 400    | Validation failed      |
+| 400    | Account is not active  |
+| 401    | Unauthorized           |
+| 404    | Account not found      |
+
+---
+
+### 12. External Withdrawal
+
+```
+POST /api/ledger/withdraw
+```
+
+**Headers:**
+
+| Header          | Value              |
+| --------------- | ------------------ |
+| `Authorization` | `Bearer <idToken>` |
+| `Content-Type`  | `application/json` |
+
+**Request Body:**
+
+| Field         | Type   | Required | Validation               |
+| ------------- | ------ | -------- | ------------------------ |
+| `accountId`   | string | Yes      | Valid 24-char hex ObjectId (must be yours) |
+| `amount`      | number | Yes      | Positive integer (paise) |
+| `description` | string | No       | Max 255 characters       |
+
+**Example Request Body:**
+
+```json
+{
+  "accountId": "665f2b000000000000000001",
+  "amount": 20000,
+  "description": "ATM withdrawal"
+}
+```
+
+**Success Response — `201 Created`:**
+
+```json
+{
+  "message": "Withdrawal successful",
+  "ledgerEntry": {
+    "id": "665f4e...",
+    "accountId": "665f2b000000000000000001",
+    "amount": -20000,
+    "type": "DEBIT",
+    "source": "EXTERNAL",
+    "description": "ATM withdrawal",
+    "createdAt": "2026-03-10T..."
+  }
+}
+```
+
+**Error Responses:**
+
+| Status | Error                  |
+| ------ | ---------------------- |
+| 400    | Validation failed      |
+| 400    | Account is not active  |
+| 400    | Insufficient balance   |
+| 401    | Unauthorized           |
+| 404    | Account not found      |
+
+---
+
 ## Common Error Format
 
 All error responses follow this format:
@@ -479,14 +736,6 @@ Validation errors include field-level details:
 | `FROZEN` | Account is frozen   |
 | `CLOSED` | Account is closed   |
 
-### Transaction Type
-
-| Value        | Description              |
-| ------------ | ------------------------ |
-| `TRANSFER`   | Transfer between accounts|
-| `DEPOSIT`    | Deposit into account     |
-| `WITHDRAWAL` | Withdrawal from account  |
-
 ### Transaction Status
 
 | Value        | Description              |
@@ -495,6 +744,20 @@ Validation errors include field-level details:
 | `PROCESSING` | Transaction in progress  |
 | `SETTLED`    | Transaction completed    |
 | `FAILED`     | Transaction failed       |
+
+### Ledger Entry Type
+
+| Value    | Description                |
+| -------- | -------------------------- |
+| `DEBIT`  | Money debited (negative)   |
+| `CREDIT` | Money credited (positive)  |
+
+### Ledger Source
+
+| Value      | Description                          |
+| ---------- | ------------------------------------ |
+| `TRANSFER` | Created by a user-to-user transfer   |
+| `EXTERNAL` | External deposit or withdrawal       |
 
 ### Transaction Direction (computed)
 

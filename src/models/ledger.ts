@@ -5,23 +5,23 @@ export enum LedgerEntryType {
   CREDIT = 'CREDIT',
 }
 
+export enum LedgerSource {
+  TRANSFER = 'TRANSFER',
+  EXTERNAL = 'EXTERNAL',
+}
+
 export interface ILedger extends Document {
-  transactionId: Types.ObjectId;
   accountId: Types.ObjectId;
   amount: number;
   type: LedgerEntryType;
+  source: LedgerSource;
+  description?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const ledgerSchema = new Schema<ILedger>(
   {
-    transactionId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Transaction',
-      required: true,
-      index: true,
-    },
     accountId: {
       type: Schema.Types.ObjectId,
       ref: 'Account',
@@ -36,6 +36,15 @@ const ledgerSchema = new Schema<ILedger>(
       type: String,
       enum: Object.values(LedgerEntryType),
       required: true,
+    },
+    source: {
+      type: String,
+      enum: Object.values(LedgerSource),
+      required: true,
+    },
+    description: {
+      type: String,
+      maxlength: 255,
     },
   },
   {

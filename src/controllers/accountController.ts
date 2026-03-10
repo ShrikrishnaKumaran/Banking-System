@@ -1,12 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/requireAuth';
-import {
-  createAccount as createAccountService,
-  getUserAccounts,
-  getAccountBalance as getAccountBalanceService,
-  getAccountDetails as getAccountDetailsService,
-  getTransactionHistory,
-} from '../services/accountService';
+import * as accountService from '../services/accountService';
 import { TransactionHistoryQuerySchema } from '../validators/accountSchema';
 
 export const createAccount = async (
@@ -16,12 +10,13 @@ export const createAccount = async (
 ): Promise<void> => {
   try {
     const { firebaseUid } = req.user!;
-    const account = await createAccountService(firebaseUid);
+    const { account, userName } = await accountService.createAccount(firebaseUid);
 
     res.status(201).json({
       message: 'Account created successfully',
       account: {
         id: account._id,
+        userName,
         accountNumber: account.accountNumber,
         status: account.status,
         createdAt: account.createdAt,
@@ -43,7 +38,7 @@ export const listAccounts = async (
 ): Promise<void> => {
   try {
     const { firebaseUid } = req.user!;
-    const accounts = await getUserAccounts(firebaseUid);
+    const accounts = await accountService.getUserAccounts(firebaseUid);
 
     res.status(200).json({
       message: 'Accounts retrieved successfully',
@@ -72,7 +67,7 @@ export const getAccountBalance = async (
   try {
     const { firebaseUid } = req.user!;
     const accountId = req.params.accountId as string;
-    const result = await getAccountBalanceService(firebaseUid, accountId);
+    const result = await accountService.getAccountBalance(firebaseUid, accountId);
 
     res.status(200).json({
       message: 'Balance retrieved successfully',
@@ -95,7 +90,7 @@ export const getAccountDetails = async (
   try {
     const { firebaseUid } = req.user!;
     const accountId = req.params.accountId as string;
-    const result = await getAccountDetailsService(firebaseUid, accountId);
+    const result = await accountService.getAccountDetails(firebaseUid, accountId);
 
     res.status(200).json({
       message: 'Account details retrieved successfully',
@@ -129,11 +124,39 @@ export const getAccountTransactions = async (
       return;
     }
 
-    const result = await getTransactionHistory(firebaseUid, accountId, queryResult.data);
+    const result = await accountService.getTransactionHistory(firebaseUid, accountId, queryResult.data);
 
     res.status(200).json({
       message: 'Transaction history retrieved successfully',
       ...result,
+    });
+  } catch (error: any) {
+    if (error.statusCode) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+    next(error);
+  }
+};
+
+export const updateAccountStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { firebaseUid } = req.user!;
+    const accountId = req.params.accountId as string;
+    const account = await accountService.updateAccountStatus(firebaseUid, accountId, req.body);
+
+    res.status(200).json({
+      message: 'Account status updated successfully',
+      account: {
+        id: account._id,
+        accountNumber: account.accountNumber,
+        status: account.status,
+        updatedAt: account.updatedAt,
+      },
     });
   } catch (error: any) {
     if (error.statusCode) {

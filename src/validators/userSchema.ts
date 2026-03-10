@@ -8,7 +8,9 @@ const minAge = (date: Date) => {
 };
 
 export const RegisterUserSchema = z.object({
+  userName: z.string().min(3, 'Username must be at least 3 characters').max(30, 'Username must be at most 30 characters').trim(),
   email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
   transactionPin: z.string().regex(/^\d{4,6}$/, 'Transaction PIN must be 4-6 digits'),
   legalName: z.object({
     firstName: z.string().min(1, 'First name is required').trim(),
@@ -35,6 +37,7 @@ export type RegisterUserInput = z.infer<typeof RegisterUserSchema>;
 
 export const LoginUserSchema = z.object({
   email: z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export type LoginUserInput = z.infer<typeof LoginUserSchema>;

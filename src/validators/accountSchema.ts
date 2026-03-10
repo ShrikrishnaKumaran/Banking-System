@@ -60,3 +60,12 @@ export const TransactionHistoryQuerySchema = z.object({
 );
 
 export type TransactionHistoryQuery = z.infer<typeof TransactionHistoryQuerySchema>;
+
+// Update account status
+export const UpdateAccountStatusSchema = z.object({
+  status: z.enum(['ACTIVE', 'FROZEN', 'CLOSED'], {
+    message: 'Status must be ACTIVE, FROZEN, or CLOSED',
+  }),
+});
+
+export type UpdateAccountStatusInput = z.infer<typeof UpdateAccountStatusSchema>;
