@@ -21,7 +21,7 @@ export const transferFunds = async (
   }
 
   // Validate source account belongs to authenticated user and is ACTIVE
-  const sourceAccount = await Account.findOne({ _id: input.sourceAccountId, userId: user._id });
+  const sourceAccount = await Account.findOne({ accountNumber: input.sourceAccountNumber, userId: user._id });
   if (!sourceAccount) {
     throw Object.assign(new Error('Source account not found'), { statusCode: 404 });
   }
@@ -30,7 +30,7 @@ export const transferFunds = async (
   }
 
   // Validate destination account exists and is ACTIVE
-  const destAccount = await Account.findById(input.destinationAccountId);
+  const destAccount = await Account.findOne({ accountNumber: input.destinationAccountNumber });
   if (!destAccount) {
     throw Object.assign(new Error('Destination account not found'), { statusCode: 404 });
   }
@@ -56,8 +56,8 @@ export const transferFunds = async (
     const [transaction] = await Transaction.create(
       [
         {
-          sourceAccountId: input.sourceAccountId,
-          destinationAccountId: input.destinationAccountId,
+          sourceAccountId: sourceAccount._id,
+          destinationAccountId: destAccount._id,
           amount: input.amount,
           status: TransactionStatus.SETTLED,
           idempotencyKey: input.idempotencyKey,
@@ -70,14 +70,14 @@ export const transferFunds = async (
     await Ledger.create(
       [
         {
-          accountId: input.sourceAccountId,
+          accountId: sourceAccount._id,
           amount: -input.amount,
           type: LedgerEntryType.DEBIT,
           source: LedgerSource.TRANSFER,
           description: `Transfer to ${destAccount.accountNumber}`,
         },
         {
-          accountId: input.destinationAccountId,
+          accountId: destAccount._id,
           amount: input.amount,
           type: LedgerEntryType.CREDIT,
           source: LedgerSource.TRANSFER,

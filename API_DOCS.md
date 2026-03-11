@@ -55,6 +55,7 @@ POST /api/users/register
 
 | Field                  | Type   | Required | Validation                                          |
 | ---------------------- | ------ | -------- | --------------------------------------------------- |
+| `userName`             | string | Yes      | 3-30 characters, unique                              |
 | `email`                | string | Yes      | Valid email format                                   |
 | `password`             | string | Yes      | Minimum 6 characters                                 |
 | `transactionPin`       | string | Yes      | 4-6 digits (`/^\d{4,6}$/`)                          |
@@ -72,6 +73,7 @@ POST /api/users/register
 
 ```json
 {
+  "userName": "testuser",
   "email": "test@gmail.com",
   "password": "securePass123",
   "transactionPin": "1234",
@@ -98,6 +100,7 @@ POST /api/users/register
   "message": "User registered successfully",
   "user": {
     "id": "665f1a...",
+    "userName": "testuser",
     "email": "test@gmail.com",
     "legalName": { "firstName": "Test", "lastName": "User" },
     "isActive": true,
@@ -153,6 +156,7 @@ POST /api/users/login
   "message": "Login successful",
   "user": {
     "id": "665f1a...",
+    "userName": "testuser",
     "email": "test@gmail.com",
     "legalName": { "firstName": "Test", "lastName": "User" },
     "isActive": true,
@@ -226,6 +230,7 @@ POST /api/accounts/
   "message": "Account created successfully",
   "account": {
     "id": "665f2b...",
+    "userName": "testuser",
     "accountNumber": "123456789012",
     "status": "ACTIVE",
     "createdAt": "2026-03-10T..."
@@ -235,11 +240,11 @@ POST /api/accounts/
 
 **Error Responses:**
 
-| Status | Error                                |
-| ------ | ------------------------------------ |
-| 401    | Unauthorized                         |
-| 404    | User not found                       |
-| 409    | User already has an active account   |
+| Status | Error                                        |
+| ------ | -------------------------------------------- |
+| 401    | Unauthorized                                 |
+| 404    | User not found                               |
+| 409    | Maximum of 3 accounts allowed per user       |
 
 ---
 
@@ -284,7 +289,7 @@ GET /api/accounts/
 ### 6. Get Account Balance
 
 ```
-GET /api/accounts/:accountId/balance
+GET /api/accounts/:accountNumber/balance
 ```
 
 **Headers:**
@@ -295,9 +300,9 @@ GET /api/accounts/:accountId/balance
 
 **Path Parameters:**
 
-| Param       | Type   | Description                  |
-| ----------- | ------ | ---------------------------- |
-| `accountId` | string | MongoDB ObjectId of account  |
+| Param           | Type   | Description                      |
+| --------------- | ------ | -------------------------------- |
+| `accountNumber` | string | 12-digit account number          |
 
 **Success Response — `200 OK`:**
 
@@ -316,7 +321,6 @@ GET /api/accounts/:accountId/balance
 
 | Status | Error              |
 | ------ | ------------------ |
-| 400    | Invalid account ID |
 | 401    | Unauthorized       |
 | 404    | Account not found  |
 
@@ -325,7 +329,7 @@ GET /api/accounts/:accountId/balance
 ### 7. Get Account Details
 
 ```
-GET /api/accounts/:accountId
+GET /api/accounts/:accountNumber
 ```
 
 **Headers:**
@@ -336,9 +340,9 @@ GET /api/accounts/:accountId
 
 **Path Parameters:**
 
-| Param       | Type   | Description                  |
-| ----------- | ------ | ---------------------------- |
-| `accountId` | string | MongoDB ObjectId of account  |
+| Param           | Type   | Description                      |
+| --------------- | ------ | -------------------------------- |
+| `accountNumber` | string | 12-digit account number          |
 
 **Success Response — `200 OK`:**
 
@@ -372,7 +376,6 @@ GET /api/accounts/:accountId
 
 | Status | Error              |
 | ------ | ------------------ |
-| 400    | Invalid account ID |
 | 401    | Unauthorized       |
 | 404    | Account not found  |
 
@@ -381,7 +384,7 @@ GET /api/accounts/:accountId
 ### 8. Get Transaction History
 
 ```
-GET /api/accounts/:accountId/transactions
+GET /api/accounts/:accountNumber/transactions
 ```
 
 **Headers:**
@@ -392,9 +395,9 @@ GET /api/accounts/:accountId/transactions
 
 **Path Parameters:**
 
-| Param       | Type   | Description                  |
-| ----------- | ------ | ---------------------------- |
-| `accountId` | string | MongoDB ObjectId of account  |
+| Param           | Type   | Description                      |
+| --------------- | ------ | -------------------------------- |
+| `accountNumber` | string | 12-digit account number          |
 
 **Query Parameters:**
 
@@ -409,8 +412,8 @@ GET /api/accounts/:accountId/transactions
 **Example Requests:**
 
 ```
-GET /api/accounts/665f2b.../transactions?range=7d&page=1&limit=10
-GET /api/accounts/665f2b.../transactions?range=custom&startDate=2026-03-01T00:00:00.000Z&endDate=2026-03-10T23:59:59.000Z
+GET /api/accounts/123456789012/transactions?range=7d&page=1&limit=10
+GET /api/accounts/123456789012/transactions?range=custom&startDate=2026-03-01T00:00:00.000Z&endDate=2026-03-10T23:59:59.000Z
 ```
 
 **Success Response — `200 OK`:**
@@ -442,18 +445,18 @@ GET /api/accounts/665f2b.../transactions?range=custom&startDate=2026-03-01T00:00
 
 **Error Responses:**
 
-| Status | Error              |
-| ------ | ------------------ |
-| 400    | Validation failed / Invalid account ID |
-| 401    | Unauthorized       |
-| 404    | Account not found  |
+| Status | Error                        |
+| ------ | ---------------------------- |
+| 400    | Validation failed            |
+| 401    | Unauthorized                 |
+| 404    | Account not found            |
 
 ---
 
 ### 9. Update Account Status
 
 ```
-PATCH /api/accounts/:accountId/status
+PATCH /api/accounts/:accountNumber/status
 ```
 
 **Headers:**
@@ -465,9 +468,9 @@ PATCH /api/accounts/:accountId/status
 
 **Path Parameters:**
 
-| Param       | Type   | Description                  |
-| ----------- | ------ | ---------------------------- |
-| `accountId` | string | MongoDB ObjectId of account  |
+| Param           | Type   | Description                      |
+| --------------- | ------ | -------------------------------- |
+| `accountNumber` | string | 12-digit account number          |
 
 **Request Body:**
 
@@ -526,20 +529,20 @@ POST /api/transactions/transfer
 
 **Request Body:**
 
-| Field                  | Type   | Required | Validation                                  |
-| ---------------------- | ------ | -------- | ------------------------------------------- |
-| `sourceAccountId`      | string | Yes      | Valid 24-char hex ObjectId (must be yours)   |
-| `destinationAccountId` | string | Yes      | Valid 24-char hex ObjectId (must differ)     |
-| `amount`               | number | Yes      | Positive integer (paise)                     |
-| `idempotencyKey`       | string | Yes      | Valid UUID v4 (prevents duplicate transfers) |
-| `note`                 | string | No       | Max 255 characters                           |
+| Field                       | Type   | Required | Validation                                       |
+| --------------------------- | ------ | -------- | ------------------------------------------------ |
+| `sourceAccountNumber`       | string | Yes      | 12-digit account number (must be yours)          |
+| `destinationAccountNumber`  | string | Yes      | 12-digit account number (must differ from source)|
+| `amount`                    | number | Yes      | Positive integer (paise)                         |
+| `idempotencyKey`            | string | Yes      | Valid UUID v4 (prevents duplicate transfers)     |
+| `note`                      | string | No       | Max 255 characters                               |
 
 **Example Request Body:**
 
 ```json
 {
-  "sourceAccountId": "665f2b000000000000000001",
-  "destinationAccountId": "665f2b000000000000000002",
+  "sourceAccountNumber": "123456789012",
+  "destinationAccountNumber": "987654321098",
   "amount": 50000,
   "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000",
   "note": "Rent payment"
@@ -553,8 +556,8 @@ POST /api/transactions/transfer
   "message": "Transfer completed successfully",
   "transaction": {
     "id": "665f3c...",
-    "sourceAccountId": "665f2b000000000000000001",
-    "destinationAccountId": "665f2b000000000000000002",
+    "sourceAccountId": "665f2b...",
+    "destinationAccountId": "665f4d...",
     "amount": 50000,
     "status": "SETTLED",
     "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000",
@@ -598,17 +601,17 @@ POST /api/ledger/deposit
 
 **Request Body:**
 
-| Field         | Type   | Required | Validation               |
-| ------------- | ------ | -------- | ------------------------ |
-| `accountId`   | string | Yes      | Valid 24-char hex ObjectId (must be yours) |
-| `amount`      | number | Yes      | Positive integer (paise) |
-| `description` | string | No       | Max 255 characters       |
+| Field           | Type   | Required | Validation                   |
+| --------------- | ------ | -------- | ---------------------------- |
+| `accountNumber` | string | Yes      | 12-digit account number (must be yours) |
+| `amount`        | number | Yes      | Positive integer (paise)     |
+| `description`   | string | No       | Max 255 characters           |
 
 **Example Request Body:**
 
 ```json
 {
-  "accountId": "665f2b000000000000000001",
+  "accountNumber": "123456789012",
   "amount": 100000,
   "description": "Salary credit"
 }
@@ -621,7 +624,7 @@ POST /api/ledger/deposit
   "message": "Deposit successful",
   "ledgerEntry": {
     "id": "665f4d...",
-    "accountId": "665f2b000000000000000001",
+    "accountId": "665f2b...",
     "amount": 100000,
     "type": "CREDIT",
     "source": "EXTERNAL",
@@ -657,17 +660,17 @@ POST /api/ledger/withdraw
 
 **Request Body:**
 
-| Field         | Type   | Required | Validation               |
-| ------------- | ------ | -------- | ------------------------ |
-| `accountId`   | string | Yes      | Valid 24-char hex ObjectId (must be yours) |
-| `amount`      | number | Yes      | Positive integer (paise) |
-| `description` | string | No       | Max 255 characters       |
+| Field           | Type   | Required | Validation                   |
+| --------------- | ------ | -------- | ---------------------------- |
+| `accountNumber` | string | Yes      | 12-digit account number (must be yours) |
+| `amount`        | number | Yes      | Positive integer (paise)     |
+| `description`   | string | No       | Max 255 characters           |
 
 **Example Request Body:**
 
 ```json
 {
-  "accountId": "665f2b000000000000000001",
+  "accountNumber": "123456789012",
   "amount": 20000,
   "description": "ATM withdrawal"
 }
@@ -680,7 +683,7 @@ POST /api/ledger/withdraw
   "message": "Withdrawal successful",
   "ledgerEntry": {
     "id": "665f4e...",
-    "accountId": "665f2b000000000000000001",
+    "accountId": "665f2b...",
     "amount": -20000,
     "type": "DEBIT",
     "source": "EXTERNAL",

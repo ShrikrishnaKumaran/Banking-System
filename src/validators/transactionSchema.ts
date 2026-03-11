@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
-const objectId = z
+const accountNumber = z
   .string()
-  .regex(/^[a-f\d]{24}$/, 'Must be a valid 24-char hex ObjectId');
+  .regex(/^\d{12}$/, 'Must be a valid 12-digit account number');
 
 // Transfer money from authenticated user's account to another user's account
 export const TransferSchema = z.object({
-  sourceAccountId: objectId,
-  destinationAccountId: objectId,
+  sourceAccountNumber: accountNumber,
+  destinationAccountNumber: accountNumber,
   amount: z
     .number()
     .int('Amount must be an integer (paise)')
@@ -22,8 +22,8 @@ export const TransferSchema = z.object({
     .trim()
     .optional(),
 }).refine(
-  (data) => data.sourceAccountId !== data.destinationAccountId,
-  { message: 'Source and destination accounts must be different', path: ['destinationAccountId'] },
+  (data) => data.sourceAccountNumber !== data.destinationAccountNumber,
+  { message: 'Source and destination accounts must be different', path: ['destinationAccountNumber'] },
 );
 
 export type TransferInput = z.infer<typeof TransferSchema>;

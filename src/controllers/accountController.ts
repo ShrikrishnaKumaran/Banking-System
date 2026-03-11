@@ -66,8 +66,8 @@ export const getAccountBalance = async (
 ): Promise<void> => {
   try {
     const { firebaseUid } = req.user!;
-    const accountId = req.params.accountId as string;
-    const result = await accountService.getAccountBalance(firebaseUid, accountId);
+    const accountNumber = req.params.accountNumber as string;
+    const result = await accountService.getAccountBalance(firebaseUid, accountNumber);
 
     res.status(200).json({
       message: 'Balance retrieved successfully',
@@ -89,8 +89,8 @@ export const getAccountDetails = async (
 ): Promise<void> => {
   try {
     const { firebaseUid } = req.user!;
-    const accountId = req.params.accountId as string;
-    const result = await accountService.getAccountDetails(firebaseUid, accountId);
+    const accountNumber = req.params.accountNumber as string;
+    const result = await accountService.getAccountDetails(firebaseUid, accountNumber);
 
     res.status(200).json({
       message: 'Account details retrieved successfully',
@@ -112,7 +112,7 @@ export const getAccountTransactions = async (
 ): Promise<void> => {
   try {
     const { firebaseUid } = req.user!;
-    const accountId = req.params.accountId as string;
+    const accountNumber = req.params.accountNumber as string;
 
     // Validate query params
     const queryResult = TransactionHistoryQuerySchema.safeParse(req.query);
@@ -124,7 +124,7 @@ export const getAccountTransactions = async (
       return;
     }
 
-    const result = await accountService.getTransactionHistory(firebaseUid, accountId, queryResult.data);
+    const result = await accountService.getTransactionHistory(firebaseUid, accountNumber, queryResult.data);
 
     res.status(200).json({
       message: 'Transaction history retrieved successfully',
@@ -146,8 +146,8 @@ export const updateAccountStatus = async (
 ): Promise<void> => {
   try {
     const { firebaseUid } = req.user!;
-    const accountId = req.params.accountId as string;
-    const account = await accountService.updateAccountStatus(firebaseUid, accountId, req.body);
+    const accountNumber = req.params.accountNumber as string;
+    const account = await accountService.updateAccountStatus(firebaseUid, accountNumber, req.body);
 
     res.status(200).json({
       message: 'Account status updated successfully',

@@ -7,7 +7,7 @@ export const externalDeposit = async (
   firebaseUid: string,
   input: ExternalDepositInput,
 ) => {
-  const account = await getVerifiedAccount(firebaseUid, input.accountId);
+  const account = await getVerifiedAccount(firebaseUid, input.accountNumber);
 
   const ledgerEntry = await Ledger.create({
     accountId: account._id,
@@ -24,7 +24,7 @@ export const externalWithdrawal = async (
   firebaseUid: string,
   input: ExternalWithdrawalInput,
 ) => {
-  const account = await getVerifiedAccount(firebaseUid, input.accountId);
+  const account = await getVerifiedAccount(firebaseUid, input.accountNumber);
 
   // Check sufficient balance
   const balanceResult = await Ledger.aggregate([
@@ -48,13 +48,13 @@ export const externalWithdrawal = async (
 };
 
 // Helper: verify account exists, belongs to user, and is ACTIVE
-const getVerifiedAccount = async (firebaseUid: string, accountId: string) => {
+const getVerifiedAccount = async (firebaseUid: string, accountNumber: string) => {
   const user = await User.findOne({ firebaseUid });
   if (!user) {
     throw Object.assign(new Error('User not found'), { statusCode: 404 });
   }
 
-  const account = await Account.findOne({ _id: accountId, userId: user._id });
+  const account = await Account.findOne({ accountNumber, userId: user._id });
   if (!account) {
     throw Object.assign(new Error('Account not found'), { statusCode: 404 });
   }

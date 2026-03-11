@@ -16,9 +16,9 @@ const router = Router();
 router.post('/', requireAuth, createAccount); 
 router.get('/', requireAuth, listAccounts);
 
-router.get('/:accountId', requireAuth, getAccountDetails);
-router.get('/:accountId/balance', requireAuth, getAccountBalance);
-router.get('/:accountId/transactions', requireAuth, getAccountTransactions);
-router.patch('/:accountId/status', requireAuth, validate(UpdateAccountStatusSchema), updateAccountStatus);
+router.get('/:accountNumber', requireAuth, getAccountDetails);
+router.get('/:accountNumber/balance', requireAuth, getAccountBalance);
+router.get('/:accountNumber/transactions', requireAuth, getAccountTransactions);
+router.patch('/:accountNumber/status', requireAuth, validate(UpdateAccountStatusSchema), updateAccountStatus);
 
 export default router;

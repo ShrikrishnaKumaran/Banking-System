@@ -19,13 +19,10 @@ export const createAccount = async (firebaseUid: string) => {
     throw Object.assign(new Error('User not found'), { statusCode: 404 });
   }
 
-  // Check if user already has an active account
-  const existingAccount = await Account.findOne({
-    userId: user._id,
-    status: 'ACTIVE',
-  });
-  if (existingAccount) {
-    throw Object.assign(new Error('User already has an active account'), { statusCode: 409 });
+  // Check if user already has 3 accounts
+  const accountCount = await Account.countDocuments({ userId: user._id });
+  if (accountCount >= 3) {
+    throw Object.assign(new Error('Maximum of 3 accounts allowed per user'), { statusCode: 409 });
   }
 
   const account = await Account.create({
@@ -70,11 +67,29 @@ export const getUserAccounts = async (firebaseUid: string) => {
   return accounts;
 };
 
+// Helper: verify account exists and belongs to the authenticated user
+const getVerifiedAccount = async (
+  firebaseUid: string,
+  accountNumber: string,
+): Promise<IAccount> => {
+  const user = await User.findOne({ firebaseUid });
+  if (!user) {
+    throw Object.assign(new Error('User not found'), { statusCode: 404 });
+  }
+
+  const account = await Account.findOne({ accountNumber, userId: user._id });
+  if (!account) {
+    throw Object.assign(new Error('Account not found'), { statusCode: 404 });
+  }
+
+  return account;
+};
+
 export const getAccountBalance = async (
   firebaseUid: string,
-  accountId: string,
+  accountNumber: string,
 ) => {
-  const account = await getVerifiedAccount(firebaseUid, accountId);
+  const account = await getVerifiedAccount(firebaseUid, accountNumber);
 
   const result = await Ledger.aggregate([
     { $match: { accountId: account._id } },
@@ -109,9 +124,9 @@ export const getAccountBalance = async (
 
 export const getAccountDetails = async (
   firebaseUid: string,
-  accountId: string,
+  accountNumber: string,
 ) => {
-  const account = await getVerifiedAccount(firebaseUid, accountId);
+  const account = await getVerifiedAccount(firebaseUid, accountNumber);
 
   // Single pipeline: account info + balance + recent transactions
   const result = await Account.aggregate([
@@ -169,10 +184,10 @@ export const getAccountDetails = async (
 
 export const getTransactionHistory = async (
   firebaseUid: string,
-  accountId: string,
+  accountNumber: string,
   query: TransactionHistoryQuery,
 ) => {
-  const account = await getVerifiedAccount(firebaseUid, accountId);
+  const account = await getVerifiedAccount(firebaseUid, accountNumber);
 
   // Build date filter
   const now = new Date();
@@ -242,34 +257,12 @@ export const getTransactionHistory = async (
   };
 };
 
-// Helper: verify account exists and belongs to the authenticated user
-const getVerifiedAccount = async (
-  firebaseUid: string,
-  accountId: string,
-): Promise<IAccount> => {
-  const user = await User.findOne({ firebaseUid });
-  if (!user) {
-    throw Object.assign(new Error('User not found'), { statusCode: 404 });
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(accountId)) {
-    throw Object.assign(new Error('Invalid account ID'), { statusCode: 400 });
-  }
-
-  const account = await Account.findOne({ _id: accountId, userId: user._id });
-  if (!account) {
-    throw Object.assign(new Error('Account not found'), { statusCode: 404 });
-  }
-
-  return account;
-};
-
 export const updateAccountStatus = async (
   firebaseUid: string,
-  accountId: string,
+  accountNumber: string,
   input: UpdateAccountStatusInput,
 ): Promise<IAccount> => {
-  const account = await getVerifiedAccount(firebaseUid, accountId);
+  const account = await getVerifiedAccount(firebaseUid, accountNumber);
 
   if (account.status === input.status) {
     throw Object.assign(new Error(`Account is already ${input.status}`), { statusCode: 400 });

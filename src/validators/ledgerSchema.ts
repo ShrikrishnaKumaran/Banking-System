@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-const objectId = z
+const accountNumber = z
   .string()
-  .regex(/^[a-f\d]{24}$/, 'Must be a valid 24-char hex ObjectId');
+  .regex(/^\d{12}$/, 'Must be a valid 12-digit account number');
 
 // External deposit into an account
 export const ExternalDepositSchema = z.object({
-  accountId: objectId,
+  accountNumber: accountNumber,
   amount: z
     .number()
     .int('Amount must be an integer (paise)')
@@ -22,7 +22,7 @@ export type ExternalDepositInput = z.infer<typeof ExternalDepositSchema>;
 
 // External withdrawal from an account
 export const ExternalWithdrawalSchema = z.object({
-  accountId: objectId,
+  accountNumber: accountNumber,
   amount: z
     .number()
     .int('Amount must be an integer (paise)')
